@@ -1,145 +1,113 @@
 import 'package:flutter/material.dart';
 
-// Abstract Calculator
-abstract class Calculator {
-  double add(double a, double b);
-  double subtract(double a, double b);
-  double multiply(double a, double b);
-  double divide(double a, double b);
-}
-
-// Student model
-class Student {
-  String name;
-  String course;
-  double marks;
-
-  Student({required this.name, required this.course, required this.marks});
-}
-
-// Grade Calculator
-class GradeCalculator extends Calculator {
-  List<Student> students = [];
-
-  @override
-  double add(double a, double b) => a + b;
-  @override
-  double subtract(double a, double b) => a - b;
-  @override
-  double multiply(double a, double b) => a * b;
-  @override
-  double divide(double a, double b) => a / b;
-
-  double averageMarks() =>
-      students.isEmpty ? 0.0 : students.map((s) => s.marks).reduce((a, b) => a + b) / students.length;
-
-  void addStudent(Student s) => students.add(s);
-}
-
-void main() {
-  runApp(MyApp());
-}
+void main() => runApp(MyApp());
 
 class MyApp extends StatelessWidget {
-  final GradeCalculator calculator = GradeCalculator();
+  const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Grade Calculator',
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-        scaffoldBackgroundColor: Colors.white,
-      ),
-      home: GradeCalculatorScreen(calculator: calculator),
+      title: 'Basic Calculator',
+      theme: ThemeData(primarySwatch: Colors.blue),
+      home: CalculatorScreen(),
     );
   }
 }
 
-class GradeCalculatorScreen extends StatefulWidget {
-  final GradeCalculator calculator;
-
-  GradeCalculatorScreen({required this.calculator});
+class CalculatorScreen extends StatefulWidget {
+  const CalculatorScreen({super.key});
 
   @override
-  _GradeCalculatorScreenState createState() => _GradeCalculatorScreenState();
+  _CalculatorScreenState createState() => _CalculatorScreenState();
 }
 
-class _GradeCalculatorScreenState extends State<GradeCalculatorScreen> {
-  final nameController = TextEditingController();
-  final courseController = TextEditingController();
-  final marksController = TextEditingController();
+class _CalculatorScreenState extends State<CalculatorScreen> {
+  String input = '';
+  String result = '';
+  String operation = '';
+  double first = 0;
 
-  void addStudent() {
-    String name = nameController.text;
-    String course = courseController.text;
-    double? marks = double.tryParse(marksController.text);
+  final List<String> buttons = [
+    '7','8','9','/',
+    '4','5','6','*',
+    '1','2','3','-',
+    '0','.','=','+',
+    'C'
+  ];
 
-    if (name.isEmpty || course.isEmpty || marks == null) return;
-
+  void buttonPressed(String value) {
     setState(() {
-      widget.calculator.addStudent(Student(name: name, course: course, marks: marks));
-      nameController.clear();
-      courseController.clear();
-      marksController.clear();
+      if (value == 'C') {
+        input = '';
+        result = '';
+        first = 0;
+        operation = '';
+      } else if (value == '+' || value == '-' || value == '*' || value == '/') {
+        first = double.tryParse(input) ?? 0;
+        input = '';
+        operation = value;
+      } else if (value == '=') {
+        double second = double.tryParse(input) ?? 0;
+        switch (operation) {
+          case '+':
+            result = (first + second).toString();
+            break;
+          case '-':
+            result = (first - second).toString();
+            break;
+          case '*':
+            result = (first * second).toString();
+            break;
+          case '/':
+            result = (second != 0) ? (first / second).toString() : 'Error';
+            break;
+        }
+        input = '';
+      } else {
+        input += value;
+      }
     });
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Grade Calculator')),
-      body: Padding(
-        padding: EdgeInsets.all(16),
-        child: Column(
-          children: [
-            // Input fields
-            TextField(
-              controller: nameController,
-              decoration: InputDecoration(labelText: 'Student Name', border: OutlineInputBorder()),
+      appBar: AppBar(title: Text('Basic Calculator')),
+      body: Column(
+        children: [
+          Container(
+            alignment: Alignment.centerRight,
+            padding: EdgeInsets.symmetric(vertical: 24, horizontal: 12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Text(input, style: TextStyle(fontSize: 24)),
+                Text(result, style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold)),
+              ],
             ),
-            SizedBox(height: 8),
-            TextField(
-              controller: courseController,
-              decoration: InputDecoration(labelText: 'Course', border: OutlineInputBorder()),
-            ),
-            SizedBox(height: 8),
-            TextField(
-              controller: marksController,
-              decoration: InputDecoration(labelText: 'Marks', border: OutlineInputBorder()),
-              keyboardType: TextInputType.number,
-            ),
-            SizedBox(height: 12),
-            // Add button
-            ElevatedButton(
-              onPressed: addStudent,
-              child: Text('Add Student'),
-              style: ElevatedButton.styleFrom(backgroundColor: Colors.blueAccent),
-            ),
-            SizedBox(height: 20),
-            // List of students
-            Expanded(
-              child: ListView.builder(
-                itemCount: widget.calculator.students.length,
-                itemBuilder: (context, index) {
-                  final s = widget.calculator.students[index];
-                  return Card(
-                    color: Colors.blue[50],
-                    child: ListTile(
-                      title: Text('${s.name} (${s.course})'),
-                      trailing: Text('${s.marks}'),
+          ),
+          Expanded(
+            child: GridView.builder(
+              itemCount: buttons.length,
+              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 4),
+              itemBuilder: (context, index) {
+                final button = buttons[index];
+                return Padding(
+                  padding: EdgeInsets.all(4),
+                  child: ElevatedButton(
+                    onPressed: () => buttonPressed(button),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.blue,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                     ),
-                  );
-                },
-              ),
+                    child: Text(button, style: TextStyle(fontSize: 24)),
+                  ),
+                );
+              },
             ),
-            // Average
-            Text(
-              'Average Marks: ${widget.calculator.averageMarks().toStringAsFixed(1)}',
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
